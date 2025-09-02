@@ -1,0 +1,102 @@
+import { useState } from 'react';
+import { Goal, GoalPeriod, TaskType } from './types';
+import { GoalItem } from './GoalItem';
+
+interface GoalSectionProps {
+  title: string;
+  period: GoalPeriod;
+  goals: Goal[];
+  onAddGoal: (period: GoalPeriod, text: string) => void;
+  onToggleGoal: (period: GoalPeriod, id: string) => void;
+  onEditGoal: (period: GoalPeriod, id: string, newText: string, newType: TaskType) => void;
+  onDeleteGoal: (period: GoalPeriod, id: string) => void;
+}
+
+export const GoalSection = ({
+  title,
+  period,
+  goals,
+  onAddGoal,
+  onToggleGoal,
+  onEditGoal,
+  onDeleteGoal
+}: GoalSectionProps) => {
+  const [newGoalText, setNewGoalText] = useState('');
+
+  const handleAddGoal = () => {
+    if (newGoalText.trim()) {
+      onAddGoal(period, newGoalText);
+      setNewGoalText('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddGoal();
+    }
+  };
+
+  const completedCount = goals.filter(goal => goal.completed).length;
+  const totalCount = goals.length;
+  const signalCount = goals.filter(goal => goal.type === 'signal').length;
+  const noiseCount = goals.filter(goal => goal.type === 'noise').length;
+
+  return (
+    <div className="bg-gray-50 rounded-xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        <div className="text-sm text-gray-600">
+          <div>{completedCount}/{totalCount} completed</div>
+          <div className="flex gap-3 mt-1">
+            <span className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+              </svg>
+              {signalCount}
+            </span>
+            <span className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+              {noiseCount}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          placeholder={`Add a new ${period} goal...`}
+          value={newGoalText}
+          onChange={(e) => setNewGoalText(e.target.value)}
+          onKeyDown={handleKeyPress}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={handleAddGoal}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Add
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {goals.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">No {period} goals yet. Add one above!</p>
+        ) : (
+          goals.map(goal => (
+            <GoalItem
+              key={goal.id}
+              goal={goal}
+              period={period}
+              onToggle={onToggleGoal}
+              onEdit={onEditGoal}
+              onDelete={onDeleteGoal}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
