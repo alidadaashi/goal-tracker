@@ -1,7 +1,7 @@
 export const getDateInfo = () => {
   const now = new Date();
   
-  // Year for quarterly
+  // Year for quarterly and yearly
   const year = now.getFullYear();
   
   // Quarter
@@ -25,7 +25,11 @@ export const getDateInfo = () => {
     day: 'numeric' 
   });
   
+  // Yearly
+  const yearName = year.toString();
+  
   return {
+    yearly: yearName,
     quarterly: quarterName,
     monthly: monthName,
     weekly: weekName,

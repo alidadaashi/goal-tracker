@@ -124,13 +124,9 @@ export const GoalItem = ({ goal, period, onToggle, onEdit, onDelete }: GoalItemP
             title="Delete task"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
-              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v6a1 1 0 11-2 0V6a1 1 0 011-1z" clipRule="evenodd" />
-              <path fillRule="evenodd" d="M6 5a1 1 0 011 1v6a1 1 0 11-2 0V6a1 1 0 011-1z" clipRule="evenodd" />
-              <path fillRule="evenodd" d="M14 5a1 1 0 011 1v6a1 1 0 11-2 0V6a1 1 0 011-1z" clipRule="evenodd" />
-              <path fillRule="evenodd" d="M4 4a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" clipRule="evenodd" />
-              <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v1a1 1 0 001 1h10a1 1 0 001-1V4a2 2 0 00-2-2H6z" clipRule="evenodd" />
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
             </svg>
+            
           </button>
         </>
       )}

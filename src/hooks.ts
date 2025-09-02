@@ -8,7 +8,8 @@ export const useGoals = () => {
     daily: [],
     weekly: [],
     monthly: [],
-    quarterly: []
+    quarterly: [],
+    yearly: []
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -17,15 +18,31 @@ export const useGoals = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        
+        // Ensure all periods exist with defaults
+        const defaultGoals: GoalsByPeriod = {
+          daily: [],
+          weekly: [],
+          monthly: [],
+          quarterly: [],
+          yearly: []
+        };
+        
+        // Merge saved data with defaults
+        const mergedGoals = { ...defaultGoals, ...parsed };
+        
         // Convert date strings back to Date objects and handle legacy data without type field
-        Object.keys(parsed).forEach(period => {
-          parsed[period] = parsed[period].map((goal: any) => ({
-            ...goal,
-            createdAt: new Date(goal.createdAt),
-            type: goal.type || 'signal' // Default to signal for legacy goals
-          }));
+        Object.keys(mergedGoals).forEach(period => {
+          if (mergedGoals[period as keyof GoalsByPeriod]) {
+            mergedGoals[period as keyof GoalsByPeriod] = mergedGoals[period as keyof GoalsByPeriod].map((goal: any) => ({
+              ...goal,
+              createdAt: new Date(goal.createdAt),
+              type: goal.type || 'signal' // Default to signal for legacy goals
+            }));
+          }
         });
-        setGoals(parsed);
+        
+        setGoals(mergedGoals);
       } catch (error) {
         console.error('Failed to load goals from storage:', error);
       }

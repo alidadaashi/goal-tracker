@@ -8,11 +8,12 @@ export interface Goal {
   type: TaskType;
 }
 
-export type GoalPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly';
+export type GoalPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export interface GoalsByPeriod {
   daily: Goal[];
   weekly: Goal[];
   monthly: Goal[];
   quarterly: Goal[];
+  yearly: Goal[];
 }

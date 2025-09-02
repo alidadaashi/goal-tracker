@@ -8,13 +8,23 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-8xl mx-auto px-4 py-8">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Goal Tracker</h1>
-          <p className="text-gray-600">Organize your daily, weekly, monthly, and quarterly goals</p>
+          <p className="text-gray-600">Organize your yearly, quarterly, monthly, weekly, and daily goals</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <GoalSection
+            title={dateInfo.yearly}
+            period="yearly"
+            goals={goals.yearly}
+            onAddGoal={addGoal}
+            onToggleGoal={toggleGoal}
+            onEditGoal={editGoal}
+            onDeleteGoal={deleteGoal}
+          />
+          
           <GoalSection
             title={dateInfo.quarterly}
             period="quarterly"
