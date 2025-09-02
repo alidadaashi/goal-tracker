@@ -1,8 +1,10 @@
 import { useGoals } from './hooks';
 import { GoalSection } from './GoalSection';
+import { getDateInfo } from './dateUtils';
 
 function App() {
   const { goals, addGoal, toggleGoal, editGoal, deleteGoal } = useGoals();
+  const dateInfo = getDateInfo();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -14,7 +16,7 @@ function App() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <GoalSection
-            title="Quarterly Goals"
+            title={dateInfo.quarterly}
             period="quarterly"
             goals={goals.quarterly}
             onAddGoal={addGoal}
@@ -24,7 +26,7 @@ function App() {
           />
           
           <GoalSection
-            title="Monthly Goals"
+            title={dateInfo.monthly}
             period="monthly"
             goals={goals.monthly}
             onAddGoal={addGoal}
@@ -34,7 +36,7 @@ function App() {
           />
           
           <GoalSection
-            title="Weekly Goals"
+            title={dateInfo.weekly}
             period="weekly"
             goals={goals.weekly}
             onAddGoal={addGoal}
@@ -44,7 +46,7 @@ function App() {
           />
           
           <GoalSection
-            title="Daily Goals"
+            title={dateInfo.daily}
             period="daily"
             goals={goals.daily}
             onAddGoal={addGoal}
