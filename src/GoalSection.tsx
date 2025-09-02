@@ -58,8 +58,6 @@ export const GoalSection = ({
     onDrop(period);
   };
 
-  const completedCount = goals.filter(goal => goal.completed).length;
-  const totalCount = goals.length;
   const signalCount = goals.filter(goal => goal.type === 'signal').length;
   const noiseCount = goals.filter(goal => goal.type === 'noise').length;
 
