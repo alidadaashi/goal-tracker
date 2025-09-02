@@ -10,6 +10,8 @@ interface GoalSectionProps {
   onToggleGoal: (period: GoalPeriod, id: string) => void;
   onEditGoal: (period: GoalPeriod, id: string, newText: string, newType: TaskType) => void;
   onDeleteGoal: (period: GoalPeriod, id: string) => void;
+  onDragStart: (goal: Goal, sourcePeriod: GoalPeriod) => void;
+  onDrop: (targetPeriod: GoalPeriod) => void;
 }
 
 export const GoalSection = ({
@@ -19,9 +21,12 @@ export const GoalSection = ({
   onAddGoal,
   onToggleGoal,
   onEditGoal,
-  onDeleteGoal
+  onDeleteGoal,
+  onDragStart,
+  onDrop
 }: GoalSectionProps) => {
   const [newGoalText, setNewGoalText] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleAddGoal = () => {
     if (newGoalText.trim()) {
@@ -36,13 +41,35 @@ export const GoalSection = ({
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    onDrop(period);
+  };
+
   const completedCount = goals.filter(goal => goal.completed).length;
   const totalCount = goals.length;
   const signalCount = goals.filter(goal => goal.type === 'signal').length;
   const noiseCount = goals.filter(goal => goal.type === 'noise').length;
 
   return (
-    <div className="bg-gray-50 rounded-xl p-6">
+    <div 
+      className={`bg-gray-50 rounded-xl p-6 ${isDragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
         <div className="text-sm text-gray-600">
@@ -92,6 +119,7 @@ export const GoalSection = ({
               onToggle={onToggleGoal}
               onEdit={onEditGoal}
               onDelete={onDeleteGoal}
+              onDragStart={onDragStart}
             />
           ))
         )}

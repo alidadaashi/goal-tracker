@@ -1,10 +1,24 @@
+import { useState } from 'react';
 import { useGoals } from './hooks';
 import { GoalSection } from './GoalSection';
 import { getDateInfo } from './dateUtils';
+import { Goal, GoalPeriod } from './types';
 
 function App() {
-  const { goals, addGoal, toggleGoal, editGoal, deleteGoal } = useGoals();
+  const { goals, addGoal, toggleGoal, editGoal, deleteGoal, moveGoal } = useGoals();
   const dateInfo = getDateInfo();
+  const [draggedItem, setDraggedItem] = useState<{ goal: Goal; sourcePeriod: GoalPeriod } | null>(null);
+
+  const handleDragStart = (goal: Goal, sourcePeriod: GoalPeriod) => {
+    setDraggedItem({ goal, sourcePeriod });
+  };
+
+  const handleDrop = (targetPeriod: GoalPeriod) => {
+    if (draggedItem) {
+      moveGoal(draggedItem.goal, draggedItem.sourcePeriod, targetPeriod);
+      setDraggedItem(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -23,6 +37,8 @@ function App() {
             onToggleGoal={toggleGoal}
             onEditGoal={editGoal}
             onDeleteGoal={deleteGoal}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
           />
           
           <GoalSection
@@ -33,6 +49,8 @@ function App() {
             onToggleGoal={toggleGoal}
             onEditGoal={editGoal}
             onDeleteGoal={deleteGoal}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
           />
           
           <GoalSection
@@ -43,6 +61,8 @@ function App() {
             onToggleGoal={toggleGoal}
             onEditGoal={editGoal}
             onDeleteGoal={deleteGoal}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
           />
           
           <GoalSection
@@ -53,6 +73,8 @@ function App() {
             onToggleGoal={toggleGoal}
             onEditGoal={editGoal}
             onDeleteGoal={deleteGoal}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
           />
           
           <GoalSection
@@ -63,6 +85,8 @@ function App() {
             onToggleGoal={toggleGoal}
             onEditGoal={editGoal}
             onDeleteGoal={deleteGoal}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
           />
         </div>
       </div>

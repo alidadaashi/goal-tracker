@@ -7,9 +7,10 @@ interface GoalItemProps {
   onToggle: (period: GoalPeriod, id: string) => void;
   onEdit: (period: GoalPeriod, id: string, newText: string, newType: TaskType) => void;
   onDelete: (period: GoalPeriod, id: string) => void;
+  onDragStart: (goal: Goal, sourcePeriod: GoalPeriod) => void;
 }
 
-export const GoalItem = ({ goal, period, onToggle, onEdit, onDelete }: GoalItemProps) => {
+export const GoalItem = ({ goal, period, onToggle, onEdit, onDelete, onDragStart }: GoalItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(goal.text);
   const [editType, setEditType] = useState<TaskType>(goal.type);
@@ -40,6 +41,11 @@ export const GoalItem = ({ goal, period, onToggle, onEdit, onDelete }: GoalItemP
     onEdit(period, goal.id, goal.text, newType);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    onDragStart(goal, period);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
   const getTaskTypeIcon = (type: TaskType) => {
     return type === 'signal' ? (
       <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
@@ -53,7 +59,11 @@ export const GoalItem = ({ goal, period, onToggle, onEdit, onDelete }: GoalItemP
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
+    <div 
+      className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow cursor-move"
+      draggable={!isEditing}
+      onDragStart={handleDragStart}
+    >
       <button
         onClick={toggleTaskType}
         className="flex-shrink-0 p-1 rounded hover:bg-gray-100 transition-colors"

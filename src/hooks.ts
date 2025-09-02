@@ -96,11 +96,22 @@ export const useGoals = () => {
     }));
   };
 
+  const moveGoal = (goal: Goal, sourcePeriod: GoalPeriod, targetPeriod: GoalPeriod) => {
+    if (sourcePeriod === targetPeriod) return;
+    
+    setGoals(prev => ({
+      ...prev,
+      [sourcePeriod]: prev[sourcePeriod].filter(g => g.id !== goal.id),
+      [targetPeriod]: [...prev[targetPeriod], goal]
+    }));
+  };
+
   return {
     goals,
     addGoal,
     toggleGoal,
     editGoal,
-    deleteGoal
+    deleteGoal,
+    moveGoal
   };
 };
