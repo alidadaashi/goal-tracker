@@ -108,9 +108,6 @@ export const GoalItem = ({ goal, period, onToggle, onEdit, onDelete }: GoalItemP
             <span className={`block ${goal.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
               {goal.text}
             </span>
-            <span className="text-xs text-gray-500 mt-1">
-              {goal.type}
-            </span>
           </div>
           <button
             onClick={() => setIsEditing(true)}
