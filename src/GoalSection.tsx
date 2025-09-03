@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Goal, GoalPeriod, TaskType } from './types';
 import { GoalItem } from './GoalItem';
 
@@ -27,7 +27,17 @@ export const GoalSection = ({
 }: GoalSectionProps) => {
   const [newGoalText, setNewGoalText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isBlurred, setIsBlurred] = useState(false);
+  
+  const getStorageKey = () => `goalSection_${period}_isBlurred`;
+  
+  const [isBlurred, setIsBlurred] = useState(() => {
+    const saved = localStorage.getItem(getStorageKey());
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(getStorageKey(), JSON.stringify(isBlurred));
+  }, [isBlurred, period]);
 
   const handleAddGoal = () => {
     if (newGoalText.trim()) {
@@ -59,8 +69,6 @@ export const GoalSection = ({
     onDrop(period);
   };
 
-  const completedCount = goals.filter(goal => goal.completed).length;
-  const totalCount = goals.length;
   const signalCount = goals.filter(goal => goal.type === 'signal').length;
   const noiseCount = goals.filter(goal => goal.type === 'noise').length;
 
