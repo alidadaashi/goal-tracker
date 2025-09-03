@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGoals } from './hooks';
 import { GoalSection } from './GoalSection';
 import { getDateInfo } from './dateUtils';
@@ -8,6 +8,13 @@ function App() {
   const { goals, addGoal, toggleGoal, editGoal, deleteGoal, moveGoal } = useGoals();
   const dateInfo = getDateInfo();
   const [draggedItem, setDraggedItem] = useState<{ goal: Goal; sourcePeriod: GoalPeriod } | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+    }
+  }, []);
 
   const handleDragStart = (goal: Goal, sourcePeriod: GoalPeriod) => {
     setDraggedItem({ goal, sourcePeriod });
@@ -28,66 +35,80 @@ function App() {
           <p className="text-gray-600">Organize your yearly, quarterly, monthly, weekly, and daily goals</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <GoalSection
-            title={dateInfo.yearly}
-            period="yearly"
-            goals={goals.yearly}
-            onAddGoal={addGoal}
-            onToggleGoal={toggleGoal}
-            onEditGoal={editGoal}
-            onDeleteGoal={deleteGoal}
-            onDragStart={handleDragStart}
-            onDrop={handleDrop}
-          />
+        <div 
+          ref={scrollContainerRef}
+          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]"
+          style={{ scrollbarWidth: 'thin' }}
+        >
+          <div className="flex-shrink-0 w-80">
+            <GoalSection
+              title={dateInfo.yearly}
+              period="yearly"
+              goals={goals.yearly}
+              onAddGoal={addGoal}
+              onToggleGoal={toggleGoal}
+              onEditGoal={editGoal}
+              onDeleteGoal={deleteGoal}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+            />
+          </div>
           
-          <GoalSection
-            title={dateInfo.quarterly}
-            period="quarterly"
-            goals={goals.quarterly}
-            onAddGoal={addGoal}
-            onToggleGoal={toggleGoal}
-            onEditGoal={editGoal}
-            onDeleteGoal={deleteGoal}
-            onDragStart={handleDragStart}
-            onDrop={handleDrop}
-          />
+          <div className="flex-shrink-0 w-80">
+            <GoalSection
+              title={dateInfo.quarterly}
+              period="quarterly"
+              goals={goals.quarterly}
+              onAddGoal={addGoal}
+              onToggleGoal={toggleGoal}
+              onEditGoal={editGoal}
+              onDeleteGoal={deleteGoal}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+            />
+          </div>
           
-          <GoalSection
-            title={dateInfo.monthly}
-            period="monthly"
-            goals={goals.monthly}
-            onAddGoal={addGoal}
-            onToggleGoal={toggleGoal}
-            onEditGoal={editGoal}
-            onDeleteGoal={deleteGoal}
-            onDragStart={handleDragStart}
-            onDrop={handleDrop}
-          />
+          <div className="flex-shrink-0 w-80">
+            <GoalSection
+              title={dateInfo.monthly}
+              period="monthly"
+              goals={goals.monthly}
+              onAddGoal={addGoal}
+              onToggleGoal={toggleGoal}
+              onEditGoal={editGoal}
+              onDeleteGoal={deleteGoal}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+            />
+          </div>
           
-          <GoalSection
-            title={dateInfo.weekly}
-            period="weekly"
-            goals={goals.weekly}
-            onAddGoal={addGoal}
-            onToggleGoal={toggleGoal}
-            onEditGoal={editGoal}
-            onDeleteGoal={deleteGoal}
-            onDragStart={handleDragStart}
-            onDrop={handleDrop}
-          />
+          <div className="flex-shrink-0 w-80">
+            <GoalSection
+              title={dateInfo.weekly}
+              period="weekly"
+              goals={goals.weekly}
+              onAddGoal={addGoal}
+              onToggleGoal={toggleGoal}
+              onEditGoal={editGoal}
+              onDeleteGoal={deleteGoal}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+            />
+          </div>
           
-          <GoalSection
-            title={dateInfo.daily}
-            period="daily"
-            goals={goals.daily}
-            onAddGoal={addGoal}
-            onToggleGoal={toggleGoal}
-            onEditGoal={editGoal}
-            onDeleteGoal={deleteGoal}
-            onDragStart={handleDragStart}
-            onDrop={handleDrop}
-          />
+          <div className="flex-shrink-0 w-80">
+            <GoalSection
+              title={dateInfo.daily}
+              period="daily"
+              goals={goals.daily}
+              onAddGoal={addGoal}
+              onToggleGoal={toggleGoal}
+              onEditGoal={editGoal}
+              onDeleteGoal={deleteGoal}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+            />
+          </div>
         </div>
       </div>
     </div>
