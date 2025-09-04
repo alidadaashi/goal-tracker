@@ -37,7 +37,7 @@ function App() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]"
+          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)] justify-center"
           style={{ scrollbarWidth: 'thin' }}
         >
           <div className="flex-shrink-0 w-80">
