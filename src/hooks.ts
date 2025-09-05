@@ -16,53 +16,109 @@ export const useGoals = () => {
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load goals from Supabase when user is authenticated
+  // Always load from localStorage first (local-first approach)
   useEffect(() => {
-    if (user) {
-      loadGoalsFromSupabase();
-    } else {
-      // Load from localStorage if not authenticated
-      loadGoalsFromLocalStorage();
-    }
-  }, [user]);
+    loadGoalsFromLocalStorage();
+  }, []);
 
-  const loadGoalsFromSupabase = async () => {
+  // When user signs in, merge Supabase data with local data
+  useEffect(() => {
+    if (user && isLoaded) {
+      mergeSupabaseWithLocal();
+    }
+  }, [user, isLoaded]);
+
+  // Save to localStorage whenever goals change
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
+    }
+  }, [goals, isLoaded]);
+
+  // Sync to Supabase whenever goals change (if user is authenticated)
+  useEffect(() => {
+    if (user && isLoaded) {
+      syncToSupabase();
+    }
+  }, [goals, user, isLoaded]);
+
+  // Set up real-time subscription when user is authenticated
+  useEffect(() => {
     if (!user) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+    const channel = supabase
+      .channel('goals_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'goals',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time change received:', payload);
+          handleRealtimeChange(payload);
+        }
+      )
+      .subscribe();
 
-      if (error) throw error;
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
-      const goalsByPeriod: GoalsByPeriod = {
-        daily: [],
-        weekly: [],
-        monthly: [],
-        quarterly: [],
-        yearly: []
+  const handleRealtimeChange = (payload: any) => {
+    if (!payload.new && !payload.old) return;
+
+    const changeType = payload.eventType;
+    
+    if (changeType === 'INSERT' && payload.new) {
+      const newGoal: Goal = {
+        id: payload.new.goal_id,
+        text: payload.new.text,
+        completed: payload.new.completed,
+        createdAt: new Date(payload.new.created_at),
+        type: payload.new.type as TaskType
       };
-
-      data?.forEach((dbGoal) => {
-        const goal: Goal = {
-          id: dbGoal.goal_id,
-          text: dbGoal.text,
-          completed: dbGoal.completed,
-          createdAt: new Date(dbGoal.created_at),
-          type: dbGoal.type as TaskType
+      
+      setGoals(prev => {
+        const period = payload.new.period as GoalPeriod;
+        // Check if goal already exists locally (avoid duplicates)
+        const exists = prev[period].some(goal => goal.id === newGoal.id);
+        if (exists) return prev;
+        
+        return {
+          ...prev,
+          [period]: [...prev[period], newGoal]
         };
-        goalsByPeriod[dbGoal.period as keyof GoalsByPeriod].push(goal);
       });
-
-      setGoals(goalsByPeriod);
-      setIsLoaded(true);
-    } catch (error) {
-      console.error('Error loading goals from Supabase:', error);
-      // Fallback to localStorage
-      loadGoalsFromLocalStorage();
+    } else if (changeType === 'UPDATE' && payload.new) {
+      const updatedGoal: Goal = {
+        id: payload.new.goal_id,
+        text: payload.new.text,
+        completed: payload.new.completed,
+        createdAt: new Date(payload.new.created_at),
+        type: payload.new.type as TaskType
+      };
+      
+      setGoals(prev => {
+        const period = payload.new.period as GoalPeriod;
+        return {
+          ...prev,
+          [period]: prev[period].map(goal =>
+            goal.id === updatedGoal.id ? updatedGoal : goal
+          )
+        };
+      });
+    } else if (changeType === 'DELETE' && payload.old) {
+      const deletedGoalId = payload.old.goal_id;
+      const period = payload.old.period as GoalPeriod;
+      
+      setGoals(prev => ({
+        ...prev,
+        [period]: prev[period].filter(goal => goal.id !== deletedGoalId)
+      }));
     }
   };
 
@@ -103,31 +159,109 @@ export const useGoals = () => {
     setIsLoaded(true);
   };
 
-  // Save to localStorage for offline support
-  useEffect(() => {
-    if (isLoaded && !user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
-    }
-  }, [goals, isLoaded, user]);
-
-  const saveGoalToSupabase = async (goal: Goal, period: GoalPeriod, action: 'insert' | 'update' | 'delete') => {
+  const mergeSupabaseWithLocal = async () => {
     if (!user) return;
 
     try {
-      if (action === 'insert') {
-        const { error } = await supabase
-          .from('goals')
-          .insert({
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const supabaseGoals: GoalsByPeriod = {
+          daily: [],
+          weekly: [],
+          monthly: [],
+          quarterly: [],
+          yearly: []
+        };
+
+        data.forEach((dbGoal) => {
+          const goal: Goal = {
+            id: dbGoal.goal_id,
+            text: dbGoal.text,
+            completed: dbGoal.completed,
+            createdAt: new Date(dbGoal.created_at),
+            type: dbGoal.type as TaskType
+          };
+          supabaseGoals[dbGoal.period].push(goal);
+        });
+
+        // Merge with local goals, prioritizing newer goals and avoiding duplicates
+        setGoals(currentGoals => {
+          const merged: GoalsByPeriod = { ...currentGoals };
+          
+          Object.keys(supabaseGoals).forEach(period => {
+            const periodKey = period as GoalPeriod;
+            const localGoals = merged[periodKey];
+            const remoteGoals = supabaseGoals[periodKey];
+            
+            // Create a map of existing local goals by ID
+            const localGoalsMap = new Map(localGoals.map(goal => [goal.id, goal]));
+            
+            // Add remote goals that don't exist locally
+            remoteGoals.forEach(remoteGoal => {
+              if (!localGoalsMap.has(remoteGoal.id)) {
+                merged[periodKey].push(remoteGoal);
+              }
+            });
+          });
+          
+          return merged;
+        });
+      }
+    } catch (error) {
+      console.error('Error merging Supabase data with local:', error);
+    }
+  };
+
+  const syncToSupabase = async () => {
+    if (!user) return;
+
+    try {
+      // Get current state from Supabase
+      const { data: existingData, error: fetchError } = await supabase
+        .from('goals')
+        .select('goal_id')
+        .eq('user_id', user.id);
+
+      if (fetchError) throw fetchError;
+
+      const existingGoalIds = new Set(existingData?.map(g => g.goal_id) || []);
+      const currentGoals = [];
+
+      // Prepare all current local goals for sync
+      Object.entries(goals).forEach(([period, periodGoals]) => {
+        periodGoals.forEach(goal => {
+          currentGoals.push({
             user_id: user.id,
-            period,
+            period: period as GoalPeriod,
             goal_id: goal.id,
             text: goal.text,
             type: goal.type,
             completed: goal.completed
           });
-        if (error) throw error;
-      } else if (action === 'update') {
-        const { error } = await supabase
+        });
+      });
+
+      // Insert new goals (ones that don't exist in Supabase)
+      const newGoals = currentGoals.filter(goal => !existingGoalIds.has(goal.goal_id));
+      if (newGoals.length > 0) {
+        const { error: insertError } = await supabase
+          .from('goals')
+          .insert(newGoals);
+        
+        if (insertError) throw insertError;
+      }
+
+      // Update existing goals
+      const existingGoals = currentGoals.filter(goal => existingGoalIds.has(goal.goal_id));
+      for (const goal of existingGoals) {
+        const { error: updateError } = await supabase
           .from('goals')
           .update({
             text: goal.text,
@@ -135,22 +269,17 @@ export const useGoals = () => {
             completed: goal.completed
           })
           .eq('user_id', user.id)
-          .eq('goal_id', goal.id);
-        if (error) throw error;
-      } else if (action === 'delete') {
-        const { error } = await supabase
-          .from('goals')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('goal_id', goal.id);
-        if (error) throw error;
+          .eq('goal_id', goal.goal_id);
+        
+        if (updateError) throw updateError;
       }
+
     } catch (error) {
-      console.error('Error saving goal to Supabase:', error);
+      console.error('Error syncing to Supabase:', error);
     }
   };
 
-  const addGoal = async (period: GoalPeriod, text: string) => {
+  const addGoal = (period: GoalPeriod, text: string) => {
     const newGoal: Goal = {
       id: Date.now().toString(),
       text: text.trim(),
@@ -163,62 +292,46 @@ export const useGoals = () => {
       ...prev,
       [period]: [...prev[period], newGoal]
     }));
-
-    await saveGoalToSupabase(newGoal, period, 'insert');
   };
 
-  const toggleGoal = async (period: GoalPeriod, id: string) => {
-    let updatedGoal: Goal | null = null;
-    
+  const toggleGoal = (period: GoalPeriod, id: string) => {
     setGoals(prev => ({
       ...prev,
-      [period]: prev[period].map(goal => {
-        if (goal.id === id) {
-          updatedGoal = { ...goal, completed: !goal.completed };
-          return updatedGoal;
-        }
-        return goal;
-      })
+      [period]: prev[period].map(goal =>
+        goal.id === id ? { ...goal, completed: !goal.completed } : goal
+      )
     }));
-
-    if (updatedGoal) {
-      await saveGoalToSupabase(updatedGoal, period, 'update');
-    }
   };
 
-  const editGoal = async (period: GoalPeriod, id: string, newText: string, newType: TaskType) => {
-    let updatedGoal: Goal | null = null;
-    
+  const editGoal = (period: GoalPeriod, id: string, newText: string, newType: TaskType) => {
     setGoals(prev => ({
       ...prev,
-      [period]: prev[period].map(goal => {
-        if (goal.id === id) {
-          updatedGoal = { ...goal, text: newText.trim(), type: newType };
-          return updatedGoal;
-        }
-        return goal;
-      })
+      [period]: prev[period].map(goal =>
+        goal.id === id ? { ...goal, text: newText.trim(), type: newType } : goal
+      )
     }));
-
-    if (updatedGoal) {
-      await saveGoalToSupabase(updatedGoal, period, 'update');
-    }
   };
 
-  const deleteGoal = async (period: GoalPeriod, id: string) => {
-    const goalToDelete = goals[period].find(goal => goal.id === id);
-    
+  const deleteGoal = (period: GoalPeriod, id: string) => {
     setGoals(prev => ({
       ...prev,
       [period]: prev[period].filter(goal => goal.id !== id)
     }));
 
-    if (goalToDelete) {
-      await saveGoalToSupabase(goalToDelete, period, 'delete');
+    // If user is authenticated, also delete from Supabase
+    if (user) {
+      supabase
+        .from('goals')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('goal_id', id)
+        .then(({ error }) => {
+          if (error) console.error('Error deleting goal from Supabase:', error);
+        });
     }
   };
 
-  const moveGoal = async (goal: Goal, sourcePeriod: GoalPeriod, targetPeriod: GoalPeriod) => {
+  const moveGoal = (goal: Goal, sourcePeriod: GoalPeriod, targetPeriod: GoalPeriod) => {
     if (sourcePeriod === targetPeriod) return;
     
     setGoals(prev => ({
@@ -226,61 +339,12 @@ export const useGoals = () => {
       [sourcePeriod]: prev[sourcePeriod].filter(g => g.id !== goal.id),
       [targetPeriod]: [...prev[targetPeriod], goal]
     }));
-
-    // Update in Supabase: delete from source period and insert to target period
-    if (user) {
-      try {
-        await supabase
-          .from('goals')
-          .update({ period: targetPeriod })
-          .eq('user_id', user.id)
-          .eq('goal_id', goal.id);
-      } catch (error) {
-        console.error('Error moving goal in Supabase:', error);
-      }
-    }
   };
 
-  // Migration function to move localStorage data to Supabase
+  // This function is no longer needed since we always merge data
   const migrateLocalStorageToSupabase = async () => {
-    if (!user) return;
-
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-
-    try {
-      const parsed = JSON.parse(saved);
-      const migrations = [];
-
-      for (const [period, periodGoals] of Object.entries(parsed)) {
-        if (Array.isArray(periodGoals)) {
-          for (const goal of periodGoals) {
-            migrations.push({
-              user_id: user.id,
-              period: period as GoalPeriod,
-              goal_id: goal.id,
-              text: goal.text,
-              type: goal.type || 'signal',
-              completed: goal.completed || false
-            });
-          }
-        }
-      }
-
-      if (migrations.length > 0) {
-        const { error } = await supabase
-          .from('goals')
-          .insert(migrations);
-        
-        if (!error) {
-          console.log('Successfully migrated localStorage data to Supabase');
-          // Optionally clear localStorage after successful migration
-          // localStorage.removeItem(STORAGE_KEY);
-        }
-      }
-    } catch (error) {
-      console.error('Error migrating localStorage to Supabase:', error);
-    }
+    // Data is automatically synced when user signs in
+    console.log('Data sync happens automatically when signing in');
   };
 
   return {

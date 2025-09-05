@@ -7,29 +7,62 @@ export const useColumnVisibility = (period: GoalPeriod) => {
   const { user } = useAuth();
   const getStorageKey = () => `goalSection_${period}_isBlurred`;
   
+  // Always start with localStorage value (local-first)
   const [isBlurred, setIsBlurred] = useState(() => {
-    if (!user) {
-      const saved = localStorage.getItem(getStorageKey());
-      return saved ? JSON.parse(saved) : false;
-    }
-    return false;
+    const saved = localStorage.getItem(getStorageKey());
+    return saved ? JSON.parse(saved) : false;
   });
 
-  // Load visibility from Supabase when user is authenticated
+  // Always save to localStorage when state changes
+  useEffect(() => {
+    localStorage.setItem(getStorageKey(), JSON.stringify(isBlurred));
+  }, [isBlurred, period]);
+
+  // When user signs in, merge with Supabase and sync
   useEffect(() => {
     if (user) {
-      loadVisibilityFromSupabase();
+      mergeWithSupabase();
     }
   }, [user, period]);
 
-  // Save to localStorage when not authenticated
+  // Sync to Supabase when authenticated and state changes
   useEffect(() => {
-    if (!user) {
-      localStorage.setItem(getStorageKey(), JSON.stringify(isBlurred));
+    if (user) {
+      syncToSupabase();
     }
-  }, [isBlurred, period, user]);
+  }, [isBlurred, user, period]);
 
-  const loadVisibilityFromSupabase = async () => {
+  // Set up real-time subscription for column visibility
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('column_visibility_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'column_visibility',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.new && payload.new.period === period) {
+            // Update local state if remote change is different
+            if (payload.new.is_blurred !== isBlurred) {
+              setIsBlurred(payload.new.is_blurred);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, period, isBlurred]);
+
+  const mergeWithSupabase = async () => {
     if (!user) return;
 
     try {
@@ -44,15 +77,16 @@ export const useColumnVisibility = (period: GoalPeriod) => {
         throw error;
       }
 
-      if (data) {
-        setIsBlurred(data.is_blurred);
+      // If there's remote data and it's different from local, keep local preference (local-first)
+      if (data && data.is_blurred !== isBlurred) {
+        console.log(`Column ${period} visibility: keeping local preference (${isBlurred}), remote was (${data.is_blurred})`);
       }
     } catch (error) {
       console.error('Error loading visibility from Supabase:', error);
     }
   };
 
-  const saveVisibilityToSupabase = async (newIsBlurred: boolean) => {
+  const syncToSupabase = async () => {
     if (!user) return;
 
     try {
@@ -61,7 +95,7 @@ export const useColumnVisibility = (period: GoalPeriod) => {
         .upsert({
           user_id: user.id,
           period,
-          is_blurred: newIsBlurred
+          is_blurred: isBlurred
         }, {
           onConflict: 'user_id,period'
         });
@@ -72,15 +106,8 @@ export const useColumnVisibility = (period: GoalPeriod) => {
     }
   };
 
-  const toggleBlurred = async () => {
-    const newIsBlurred = !isBlurred;
-    setIsBlurred(newIsBlurred);
-    
-    if (user) {
-      await saveVisibilityToSupabase(newIsBlurred);
-    } else {
-      localStorage.setItem(getStorageKey(), JSON.stringify(newIsBlurred));
-    }
+  const toggleBlurred = () => {
+    setIsBlurred(!isBlurred);
   };
 
   return {
