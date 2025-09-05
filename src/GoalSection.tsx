@@ -65,7 +65,7 @@ export const GoalSection = ({
 
   return (
     <div 
-      className={`flex flex-col bg-white rounded-xl shadow-sm border h-[calc(100vh-7rem)] ${isDragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : 'border-gray-200'}`}
+      className={`flex flex-col bg-white rounded-xl shadow-sm border h-[calc(100vh-8rem)] ${isDragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : 'border-gray-200'}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
