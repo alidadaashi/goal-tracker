@@ -188,7 +188,7 @@ export const useGoals = () => {
             createdAt: new Date(dbGoal.created_at),
             type: dbGoal.type as TaskType
           };
-          supabaseGoals[dbGoal.period].push(goal);
+          supabaseGoals[dbGoal.period as GoalPeriod].push(goal);
         });
 
         // Merge with local goals, prioritizing newer goals and avoiding duplicates
@@ -232,11 +232,18 @@ export const useGoals = () => {
       if (fetchError) throw fetchError;
 
       const existingGoalIds = new Set(existingData?.map(g => g.goal_id) || []);
-      const currentGoals = [];
+      const currentGoals: Array<{
+        user_id: string;
+        period: GoalPeriod;
+        goal_id: string;
+        text: string;
+        type: TaskType;
+        completed: boolean;
+      }> = [];
 
       // Prepare all current local goals for sync
       Object.entries(goals).forEach(([period, periodGoals]) => {
-        periodGoals.forEach(goal => {
+        periodGoals.forEach((goal: Goal) => {
           currentGoals.push({
             user_id: user.id,
             period: period as GoalPeriod,

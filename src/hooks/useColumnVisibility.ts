@@ -46,7 +46,7 @@ export const useColumnVisibility = (period: GoalPeriod) => {
           table: 'column_visibility',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
+        (payload: any) => {
           if (payload.new && payload.new.period === period) {
             // Update local state if remote change is different
             if (payload.new.is_blurred !== isBlurred) {
