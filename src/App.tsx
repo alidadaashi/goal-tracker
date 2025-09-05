@@ -4,6 +4,7 @@ import { GoalSection } from './GoalSection';
 import { getDateInfo } from './dateUtils';
 import { Goal, GoalPeriod } from './types';
 import { useAuth } from './contexts/AuthContext';
+import { InstallPrompt } from './InstallPrompt';
 
 function App() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
@@ -214,6 +215,7 @@ function App() {
           </div>
         </div>
       </div>
+      <InstallPrompt />
     </div>
   );
 }
