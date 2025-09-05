@@ -14,9 +14,18 @@ function App() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
-    }
+    const scrollToRight = () => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        // Scroll to show the rightmost column (daily goals) first
+        container.scrollLeft = container.scrollWidth - container.clientWidth;
+      }
+    };
+
+    // Add a small delay to ensure content is rendered
+    const timer = setTimeout(scrollToRight, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Auto-migrate localStorage data when user signs in
@@ -66,9 +75,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-8xl mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <div className="flex justify-center items-center mb-4">
+      <div className="max-w-8xl mx-auto px-4 py-4">
+        <header className="text-center mb-4">
+          <div className="flex justify-center items-center mb-2">
             <div></div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Goal Tracker</h1>
@@ -128,7 +137,7 @@ function App() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)] justify-center"
+          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-8rem)] justify-center"
           style={{ scrollbarWidth: 'thin' }}
         >
           <div className="flex-shrink-0 w-80">
