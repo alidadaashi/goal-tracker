@@ -81,7 +81,7 @@ function App() {
             <div></div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Goal Tracker</h1>
-              <div className="flex justify-center">
+              <div className="flex justify-center items-center gap-3">
               {user ? (
                 <>
                   {user.user_metadata?.avatar_url && (
@@ -94,7 +94,7 @@ function App() {
                   <span className="text-sm text-gray-600">{user.email}</span>
                   <button
                     onClick={signOut}
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
                   >
                     Sign Out
                   </button>
