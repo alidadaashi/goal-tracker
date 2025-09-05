@@ -12,18 +12,21 @@ function App() {
   const [draggedItem, setDraggedItem] = useState<{ goal: Goal; sourcePeriod: GoalPeriod } | null>(null);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastColumnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const scrollToRight = () => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        // Scroll to show the rightmost column (daily goals) first
-        container.scrollLeft = container.scrollWidth - container.clientWidth;
+      if (lastColumnRef.current) {
+        lastColumnRef.current.scrollIntoView({ 
+          behavior: 'auto', 
+          block: 'nearest',
+          inline: 'end'
+        });
       }
     };
 
     // Add a small delay to ensure content is rendered
-    const timer = setTimeout(scrollToRight, 100);
+    const timer = setTimeout(scrollToRight, 150);
     
     return () => clearTimeout(timer);
   }, []);
@@ -137,7 +140,7 @@ function App() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-8rem)] justify-center"
+          className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-8rem)]"
           style={{ scrollbarWidth: 'thin' }}
         >
           <div className="flex-shrink-0 w-80">
@@ -196,7 +199,7 @@ function App() {
             />
           </div>
           
-          <div className="flex-shrink-0 w-80">
+          <div ref={lastColumnRef} className="flex-shrink-0 w-80">
             <GoalSection
               title={dateInfo.daily}
               period="daily"
