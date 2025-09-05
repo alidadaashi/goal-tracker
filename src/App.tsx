@@ -71,17 +71,8 @@ function App() {
           <div className="flex justify-between items-center mb-4">
             <div></div>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Goal Tracker</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Goal Tracker</h1>
               <p className="text-gray-600">
-                Organize your yearly, quarterly, monthly, weekly, and daily goals
-                {!user && (
-                  <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
-                    Offline Mode
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
               {user ? (
                 <>
                   {user.user_metadata?.avatar_url && (
@@ -137,6 +128,10 @@ function App() {
                   )}
                 </button>
               )}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+            
             </div>
           </div>
         </header>
