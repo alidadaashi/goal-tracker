@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Goal, GoalPeriod, TaskType } from './types';
 import { GoalItem } from './GoalItem';
+import { useColumnVisibility } from './hooks/useColumnVisibility';
 
 interface GoalSectionProps {
   title: string;
@@ -27,17 +28,7 @@ export const GoalSection = ({
 }: GoalSectionProps) => {
   const [newGoalText, setNewGoalText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
-  
-  const getStorageKey = () => `goalSection_${period}_isBlurred`;
-  
-  const [isBlurred, setIsBlurred] = useState(() => {
-    const saved = localStorage.getItem(getStorageKey());
-    return saved ? JSON.parse(saved) : false;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(getStorageKey(), JSON.stringify(isBlurred));
-  }, [isBlurred, period]);
+  const { isBlurred, toggleBlurred } = useColumnVisibility(period);
 
   const handleAddGoal = () => {
     if (newGoalText.trim()) {
@@ -84,7 +75,7 @@ export const GoalSection = ({
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsBlurred(!isBlurred)}
+              onClick={toggleBlurred}
               className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
               title={isBlurred ? "Show column content" : "Hide column content"}
             >
